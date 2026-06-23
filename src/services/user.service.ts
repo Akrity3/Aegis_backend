@@ -1,5 +1,5 @@
 import bcryptjs from "bcryptjs";
-import { CreateUserDTO, LoginUserDTO } from "../dtos/user.dto";
+import { CreateUserDTO, LoginUserDTO, UpdateUserDTO } from "../dtos/user.dto";
 import { HttpException } from "../exceptions/http-exception";
 import { IUser } from "../models/user.model";
 import { UserMongoRepository } from "../repositories/user.repository";
@@ -60,6 +60,57 @@ export class UserService {
         if (!user) {
             throw new HttpException(404, "User not found");
         }
+        return user;
+    }
+
+    async updateUser(
+        id: string,
+        updateData: UpdateUserDTO,
+        profilePictureFilename?: string
+    ): Promise<IUser> {
+        const user = await userRepository.getUserById(id);
+        if (!user) {
+            throw new HttpException(404, "User not found");
+        }
+
+        // Handle password update if password is provided
+        if (updateData.password) {
+            if (!updateData.currentPassword) {
+                throw new HttpException(
+                    400,
+                    "Current password is required to change password"
+                );
+            }
+
+            // Get user with password selected
+            const userWithPassword =
+                await userRepository.getUserByEmailWithPassword(user.email);
+            if (!userWithPassword) {
+                throw new HttpException(404, "User not found");
+            }
+
+            const isMatch = await bcryptjs.compare(
+                updateData.currentPassword,
+                userWithPassword.password || ""
+            );
+            if (!isMatch) {
+                throw new HttpException(400, "Current password is incorrect");
+            }
+
+            user.password = updateData.password; // Mongoose pre-save hook will hash it automatically
+        }
+
+        // Update profile fields
+        if (updateData.firstName) user.firstName = updateData.firstName;
+        if (updateData.lastName) user.lastName = updateData.lastName;
+        if (updateData.gender) user.gender = updateData.gender;
+        if (updateData.phoneNumber) user.phoneNumber = updateData.phoneNumber;
+
+        if (profilePictureFilename) {
+            user.profilePicture = profilePictureFilename;
+        }
+
+        await user.save();
         return user;
     }
 }

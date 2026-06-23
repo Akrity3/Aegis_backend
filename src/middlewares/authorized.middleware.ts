@@ -20,14 +20,12 @@ export const authorizedMiddleware = async (
     next: NextFunction
 ) => {
     try {
+        let token = req.cookies?.auth_token || req.cookies?.token;
         const authHeader = req.headers.authorization;
-        if (!authHeader || !authHeader.startsWith("Bearer ")) {
-            return res
-                .status(401)
-                .json({ message: "Not authorized to access this route" });
+        if (authHeader && authHeader.startsWith("Bearer ")) {
+            token = authHeader.split(" ")[1];
         }
 
-        const token = authHeader.split(" ")[1];
         if (!token) {
             return res
                 .status(401)

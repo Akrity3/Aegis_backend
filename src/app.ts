@@ -9,6 +9,7 @@ import rateLimit from "express-rate-limit";
 import colors from "colors";
 import { CORS_ORIGIN, DISABLE_RATE_LIMIT, NODE_ENV } from "./configs/constant";
 import userRoutes from "./routes/user.route";
+import authRoutes from "./routes/auth.route";
 import { errorMiddleware } from "./middlewares/error.middleware";
 
 const app: Application = express();
@@ -126,6 +127,7 @@ app.post(
     (req: Request, res: Response, next: NextFunction) => next()
 );
 app.use("/api/v1/users", userRoutes);
+app.use("/api/v1/auth", authRoutes);
 
 app.use((req: Request, res: Response) => {
     return res.status(404).json({ message: "API not found" });

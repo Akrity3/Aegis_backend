@@ -2,6 +2,7 @@ import multer from "multer";
 import path from "path";
 import fs from "fs";
 import { Request } from "express";
+import crypto from "crypto";
 
 const storage = multer.diskStorage({
     destination: (
@@ -20,13 +21,10 @@ const storage = multer.diskStorage({
         file: Express.Multer.File,
         cb: (error: Error | null, filename: string) => void
     ) => {
-        const uniqueSuffix = Date.now() + "-" + Math.round(Math.random() * 1e9);
+        const fileSuffix = crypto.randomUUID();
         cb(
             null,
-            file.fieldname +
-                "-" +
-                uniqueSuffix +
-                path.extname(file.originalname)
+            fileSuffix + "-" + file.originalname
         );
     },
 });

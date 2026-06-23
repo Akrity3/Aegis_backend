@@ -1,5 +1,5 @@
 import { Request, Response } from "express";
-import { CreateUserDTO, LoginUserDTO } from "../dtos/user.dto";
+import { CreateUserDTO, LoginUserDTO, UpdateUserDTO } from "../dtos/user.dto";
 import { UserService } from "../services/user.service";
 import { JWT_COOKIE_EXPIRE, NODE_ENV } from "../configs/constant";
 import { z } from "zod";
@@ -59,6 +59,7 @@ export class UserController {
             return res
                 .status(200)
                 .cookie("token", token, options)
+                .cookie("auth_token", token, options)
                 .json({
                     success: true,
                     token,
@@ -102,6 +103,64 @@ export class UserController {
             const user = await userService.updateProfilePicture(
                 String(req.user._id),
                 req.file.filename
+            );
+
+            const userResponse = user.toObject();
+            delete userResponse.password;
+
+            return res.status(200).json({
+                success: true,
+                data: userResponse,
+            });
+        } catch (error: any) {
+            return res.status(error.status || error.statusCode || 500).json({
+                message: error.message || "Internal Server Error",
+            });
+        }
+    }
+
+    async whoami(req: Request, res: Response) {
+        try {
+            if (!req.user) {
+                return res
+                    .status(401)
+                    .json({ message: "Not authorized to access this route" });
+            }
+
+            const userResponse = req.user.toObject();
+            delete userResponse.password;
+
+            return res.status(200).json({
+                success: true,
+                data: userResponse,
+            });
+        } catch (error: any) {
+            return res.status(error.status || error.statusCode || 500).json({
+                message: error.message || "Internal Server Error",
+            });
+        }
+    }
+
+    async updateProfile(req: Request, res: Response) {
+        try {
+            if (!req.user?._id) {
+                return res
+                    .status(401)
+                    .json({ message: "Not authorized to access this route" });
+            }
+
+            const parseResult = UpdateUserDTO.safeParse(req.body);
+            if (!parseResult.success) {
+                const message = z.prettifyError(parseResult.error);
+                return res.status(400).json({ message });
+            }
+
+            const filename = req.file?.filename;
+
+            const user = await userService.updateUser(
+                String(req.user._id),
+                parseResult.data,
+                filename
             );
 
             const userResponse = user.toObject();
