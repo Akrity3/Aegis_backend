@@ -2,7 +2,7 @@ import dotenv from "dotenv";
 
 dotenv.config();
 
-export const PORT: number = Number(process.env.PORT) || 3000;
+export const PORT: number = Number(process.env.PORT) || 8089;
 export const NODE_ENV: string = process.env.NODE_ENV || "development";
 export const MONGODB_URL: string =
     process.env.LOCAL_DATABASE_URI ||
