@@ -8,6 +8,7 @@ export interface IUserRepository {
     createUser(user: Partial<IUser>): Promise<IUser>;
     updateProfilePicture(id: string, filename: string): Promise<IUser | null>;
     getAll(): Promise<IUser[]>;
+    getAllPaginated(page: number, limit: number, search?: string): Promise<{ users: IUser[]; total: number }>;
     update(id: string, user: Partial<IUser>): Promise<IUser | null>;
     delete(id: string): Promise<boolean>;
 }
@@ -49,6 +50,33 @@ export class UserMongoRepository implements IUserRepository {
 
     async getAll(): Promise<IUser[]> {
         return UserModel.find();
+    }
+
+    async getAllPaginated(page: number, limit: number, search?: string): Promise<{ users: IUser[]; total: number }> {
+        const skip = (page - 1) * limit;
+        
+        let query = UserModel.find();
+        
+        if (search) {
+            query = query.or([
+                { firstName: { $regex: search, $options: 'i' } },
+                { lastName: { $regex: search, $options: 'i' } },
+                { email: { $regex: search, $options: 'i' } },
+                { username: { $regex: search, $options: 'i' } }
+            ]);
+        }
+        
+        const users = await query.skip(skip).limit(limit).select('-password');
+        const total = await UserModel.countDocuments(search ? {
+            $or: [
+                { firstName: { $regex: search, $options: 'i' } },
+                { lastName: { $regex: search, $options: 'i' } },
+                { email: { $regex: search, $options: 'i' } },
+                { username: { $regex: search, $options: 'i' } }
+            ]
+        } : {});
+        
+        return { users, total };
     }
 
     async update(id: string, user: Partial<IUser>): Promise<IUser | null> {

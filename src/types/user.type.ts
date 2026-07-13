@@ -20,6 +20,7 @@ export const UserSchema = z.object({
     phoneNumber: z.string().trim().optional(),
     profilePicture: z.string().trim().default("default-profile.png"),
     role: z.enum(["admin", "user"]).default("user"),
+    status: z.enum(["active", "inactive"]).optional().default("active"),
 });
 
 export type UserType = z.infer<typeof UserSchema>;

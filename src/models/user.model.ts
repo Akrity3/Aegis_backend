@@ -65,6 +65,11 @@ const UserMongoSchema = new Schema<IUser>(
             enum: ["admin", "user"],
             default: "user",
         },
+        status: {
+            type: String,
+            enum: ["active", "inactive"],
+            default: "active",
+        },
         createdAt: {
             type: Date,
             default: Date.now,
