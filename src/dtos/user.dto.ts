@@ -14,7 +14,12 @@ export const UpdateUserDTO = z.object({
     firstName: z.string().trim().min(1, "First name cannot be empty").optional(),
     lastName: z.string().trim().min(1, "Last name cannot be empty").optional(),
     gender: z.string().trim().optional(),
-    phoneNumber: z.string().trim().optional(),
+    phoneNumber: z.string().trim().optional().refine(
+        (phone) => !phone || /^\d{10}$/.test(phone),
+        {
+            message: "Phone number must contain 10 digits",
+        }
+    ),
     password: z.string().min(6, "Password must be at least 6 characters").optional(),
     currentPassword: z.string().optional(),
 });

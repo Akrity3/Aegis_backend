@@ -14,7 +14,7 @@ export class ContactController {
 
             const parsedData = CreateContactDTO.safeParse(req.body);
             if (!parsedData.success) {
-                const message = parsedData.error.errors.map(e => e.message).join(', ');
+                const message = parsedData.error.issues.map((e: z.ZodIssue) => e.message).join(', ');
                 return res.status(400).json({ message });
             }
 
@@ -60,7 +60,7 @@ export class ContactController {
             const parsedData = UpdateContactDTO.safeParse(req.body);
             
             if (!parsedData.success) {
-                const message = parsedData.error.errors.map(e => e.message).join(', ');
+                const message = parsedData.error.issues.map((e: z.ZodIssue) => e.message).join(', ');
                 return res.status(400).json({ message });
             }
 

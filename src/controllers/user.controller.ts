@@ -11,8 +11,7 @@ export class UserController {
         try {
             const userData = CreateUserDTO.safeParse(req.body);
             if (!userData.success) {
-                // If validation fails, return the error message in the legacy format
-                const message = z.prettifyError(userData.error);
+                const message = userData.error.issues.map((e: z.ZodIssue) => e.message).join(', ');
                 return res.status(400).json({ message });
             }
 
@@ -151,7 +150,7 @@ export class UserController {
 
             const parseResult = UpdateUserDTO.safeParse(req.body);
             if (!parseResult.success) {
-                const message = z.prettifyError(parseResult.error);
+                const message = parseResult.error.issues.map((e: z.ZodIssue) => e.message).join(', ');
                 return res.status(400).json({ message });
             }
 

@@ -51,7 +51,7 @@ export class AdminController {
         try {
             const parsed = AdminCreateUserDTO.safeParse(req.body);
             if (!parsed.success) {
-                const message = z.prettifyError(parsed.error);
+                const message = parsed.error.issues.map((e: z.ZodIssue) => e.message).join(', ');
                 return ApiResponseHelper.error(res, message, 400);
             }
 
@@ -79,7 +79,7 @@ export class AdminController {
         try {
             const parsed = AdminUpdateUserDTO.safeParse(req.body);
             if (!parsed.success) {
-                const message = z.prettifyError(parsed.error);
+                const message = parsed.error.issues.map((e: z.ZodIssue) => e.message).join(', ');
                 return ApiResponseHelper.error(res, message, 400);
             }
 

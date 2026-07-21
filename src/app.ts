@@ -10,6 +10,13 @@ import colors from "colors";
 import { CORS_ORIGIN, DISABLE_RATE_LIMIT, NODE_ENV } from "./configs/constant";
 import userRoutes from "./routes/user.route";
 import authRoutes from "./routes/auth.route";
+import adminRoutes from "./routes/admin.route";
+import contactRoutes from "./routes/contact.route";
+import alertRoutes from "./routes/alert.route";
+import incidentRoutes from "./routes/incident.route";
+import notificationRoutes from "./routes/notification.route";
+import activityRoutes from "./routes/activity.route";
+import safetyCircleRoutes from "./routes/safetyCircle.route";
 import { errorMiddleware } from "./middlewares/error.middleware";
 
 const app: Application = express();
@@ -128,6 +135,13 @@ app.post(
 );
 app.use("/api/v1/users", userRoutes);
 app.use("/api/v1/auth", authRoutes);
+app.use("/api/v1/admin", adminRoutes);
+app.use("/api/v1/contacts", contactRoutes);
+app.use("/api/v1/alerts", alertRoutes);
+app.use("/api/v1/incidents", incidentRoutes);
+app.use("/api/v1/notifications", notificationRoutes);
+app.use("/api/v1/activities", activityRoutes);
+app.use("/api/v1/safety-circle", safetyCircleRoutes);
 
 app.use((req: Request, res: Response) => {
     return res.status(404).json({ message: "API not found" });
