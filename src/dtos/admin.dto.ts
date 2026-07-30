@@ -46,3 +46,30 @@ export const AdminUpdateUserDTO = z.object({
     gender: z.string().trim().optional(),
 });
 export type AdminUpdateUserDTO = z.infer<typeof AdminUpdateUserDTO>;
+
+// Admin Update User Status DTO
+export const AdminUpdateUserStatusDTO = z.object({
+    status: z.enum(["active", "inactive"], { error: "Status must be active or inactive" }),
+});
+export type AdminUpdateUserStatusDTO = z.infer<typeof AdminUpdateUserStatusDTO>;
+
+// Admin Update User Role DTO
+export const AdminUpdateUserRoleDTO = z.object({
+    role: z.enum(["admin", "user"], { error: "Role must be admin or user" }),
+});
+export type AdminUpdateUserRoleDTO = z.infer<typeof AdminUpdateUserRoleDTO>;
+
+// Admin Update Incident Status DTO
+export const AdminUpdateIncidentDTO = z.object({
+    status: z.enum(["pending", "verified", "rejected"], { error: "Status must be pending, verified, or rejected" }),
+});
+export type AdminUpdateIncidentDTO = z.infer<typeof AdminUpdateIncidentDTO>;
+
+// Admin Activity Filter DTO
+export const AdminActivityFilterDTO = z.object({
+    type: z.string().optional(),
+    userId: z.string().optional(),
+    startDate: z.string().optional(),
+    endDate: z.string().optional(),
+});
+export type AdminActivityFilterDTO = z.infer<typeof AdminActivityFilterDTO>;
