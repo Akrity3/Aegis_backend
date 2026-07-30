@@ -5,6 +5,8 @@ export interface IUserRepository {
     getUserByEmail(email: string): Promise<IUser | null>;
     getUserByEmailWithPassword(email: string): Promise<IUser | null>;
     getUserByUsername(username: string): Promise<IUser | null>;
+    getUserByToken(token: string): Promise<IUser | null>;
+    getUserByVerificationToken(token: string): Promise<IUser | null>;
     createUser(user: Partial<IUser>): Promise<IUser>;
     updateProfilePicture(id: string, filename: string): Promise<IUser | null>;
     getAll(): Promise<IUser[]>;
@@ -31,6 +33,19 @@ export class UserMongoRepository implements IUserRepository {
             locale: "en",
             strength: 2,
         });
+    }
+
+    async getUserByToken(token: string): Promise<IUser | null> {
+        try {
+            const decoded = require('jsonwebtoken').verify(token, process.env.SECRET_KEY || 'your-secret-key');
+            return UserModel.findById(decoded.id);
+        } catch (error) {
+            return null;
+        }
+    }
+
+    async getUserByVerificationToken(token: string): Promise<IUser | null> {
+        return UserModel.findOne({ verificationToken: token });
     }
 
     async createUser(user: Partial<IUser>): Promise<IUser> {
