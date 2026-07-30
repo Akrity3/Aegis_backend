@@ -7,8 +7,34 @@ export class ContactRepository {
         return await contact.save();
     }
 
-    async getContactsByUserId(userId: string): Promise<IContact[]> {
-        return await ContactModel.find({ userId }).sort({ isPrimary: -1, createdAt: -1 });
+    async getContactsByUserId(userId: string, page: number = 1, limit: number = 10, sort: string = "name"): Promise<{ data: IContact[], meta: { page: number, limit: number, total: number, totalPages: number } }> {
+        const skip = (page - 1) * limit;
+        const total = await ContactModel.countDocuments({ userId });
+        const totalPages = Math.ceil(total / limit);
+        
+        let sortObj: any = {};
+        if (sort === "name") {
+            sortObj = { name: 1 };
+        } else if (sort === "createdAt") {
+            sortObj = { createdAt: -1 };
+        } else {
+            sortObj = { isPrimary: -1, createdAt: -1 };
+        }
+
+        const data = await ContactModel.find({ userId })
+            .sort(sortObj)
+            .skip(skip)
+            .limit(limit);
+
+        return {
+            data,
+            meta: {
+                page,
+                limit,
+                total,
+                totalPages
+            }
+        };
     }
 
     async getContactById(contactId: string, userId: string): Promise<IContact | null> {
