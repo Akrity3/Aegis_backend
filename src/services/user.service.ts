@@ -113,4 +113,43 @@ export class UserService {
         await user.save();
         return user;
     }
+
+    async refreshToken(token: string): Promise<{ user: IUser; newToken: string }> {
+        const user = await userRepository.getUserByToken(token);
+        if (!user) {
+            throw new HttpException(401, "Invalid token");
+        }
+
+        const newToken = user.getSignedJwtToken();
+        return { user, newToken };
+    }
+
+    async sendVerificationEmail(email: string): Promise<void> {
+        const user = await userRepository.getUserByEmail(email);
+        if (!user) {
+            throw new HttpException(404, "User not found");
+        }
+
+        // Generate verification token
+        const verificationToken = user.generateVerificationToken();
+        await user.save();
+
+        // TODO: Implement actual email sending logic here
+        // For now, we'll just log the token
+        console.log(`Verification token for ${email}: ${verificationToken}`);
+    }
+
+    async verifyEmail(token: string): Promise<IUser> {
+        const user = await userRepository.getUserByVerificationToken(token);
+        if (!user) {
+            throw new HttpException(400, "Invalid or expired verification token");
+        }
+
+        user.isEmailVerified = true;
+        user.verifiedAt = new Date();
+        user.verificationToken = undefined;
+        await user.save();
+
+        return user;
+    }
 }
