@@ -7,6 +7,8 @@ import fs from "fs";
 import morgan from "morgan";
 import rateLimit from "express-rate-limit";
 import colors from "colors";
+import swaggerUi from "swagger-ui-express";
+import swaggerJsdoc from "swagger-jsdoc";
 import { CORS_ORIGIN, DISABLE_RATE_LIMIT, NODE_ENV } from "./configs/constant";
 import userRoutes from "./routes/user.route";
 import authRoutes from "./routes/auth.route";
@@ -17,9 +19,47 @@ import incidentRoutes from "./routes/incident.route";
 import notificationRoutes from "./routes/notification.route";
 import activityRoutes from "./routes/activity.route";
 import safetyCircleRoutes from "./routes/safetyCircle.route";
+import deviceRoutes from "./routes/device.route";
 import { errorMiddleware } from "./middlewares/error.middleware";
 
 const app: Application = express();
+
+// Swagger Configuration
+const swaggerOptions = {
+    definition: {
+        openapi: "3.0.0",
+        info: {
+            title: "Aegis API",
+            version: "1.0.0",
+            description: "Aegis Safety Application API Documentation",
+        },
+        servers: [
+            {
+                url: `http://localhost:${process.env.PORT || 8089}`,
+                description: "Development server",
+            },
+        ],
+        components: {
+            securitySchemes: {
+                cookieAuth: {
+                    type: "apiKey",
+                    in: "cookie",
+                    name: "auth_token",
+                    description: "Authentication token stored in HTTP-only cookie",
+                },
+            },
+        },
+    },
+    apis: [
+        "./src/routes/*.ts"
+    ],
+};
+
+const swaggerSpec = swaggerJsdoc(swaggerOptions);
+
+// Trust proxy for rate limiting when behind a proxy (e.g., Next.js dev server)
+// Disabled for development to avoid rate limiting validation errors
+// app.set("trust proxy", 1);
 
 const uploadDir = path.join(process.cwd(), "public/uploads");
 if (!fs.existsSync(uploadDir)) {
@@ -142,6 +182,21 @@ app.use("/api/v1/incidents", incidentRoutes);
 app.use("/api/v1/notifications", notificationRoutes);
 app.use("/api/v1/activities", activityRoutes);
 app.use("/api/v1/safety-circle", safetyCircleRoutes);
+app.use("/api/v1/devices", deviceRoutes);
+
+// Swagger UI
+app.use("/api-docs", swaggerUi.serve, swaggerUi.setup(swaggerSpec));
+
+// Raw Swagger spec endpoint for debugging
+app.get("/swagger.json", (req: Request, res: Response) => {
+    res.json(swaggerSpec);
+});
+
+// Serve the swagger-spec.json file for inspection
+app.get("/swagger-spec.json", (req: Request, res: Response) => {
+    res.sendFile(path.join(process.cwd(), "swagger-spec.json"));
+});
+
 
 app.use((req: Request, res: Response) => {
     return res.status(404).json({ message: "API not found" });

@@ -46,6 +46,13 @@ export const authorizedMiddleware = async (
                 .json({ message: "Not authorized to access this route" });
         }
 
+        // Check if email is verified (skip for development mode)
+        if (process.env.NODE_ENV !== "development" && !user.isEmailVerified) {
+            return res
+                .status(403)
+                .json({ message: "Please verify your email to access this resource" });
+        }
+
         req.user = user;
         return next();
     } catch (err: any) {
