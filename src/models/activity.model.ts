@@ -1,6 +1,7 @@
 import mongoose, { Schema, Document } from "mongoose";
 
 export const ACTIVITY_TYPES = [
+    "registration",
     "login",
     "logout",
     "profile_updated",
@@ -13,6 +14,8 @@ export const ACTIVITY_TYPES = [
     "incident_reported",
     "notification_read",
     "settings_updated",
+    "device_registered",
+    "device_removed",
 ] as const;
 
 export type ActivityType = (typeof ACTIVITY_TYPES)[number];

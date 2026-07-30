@@ -24,6 +24,10 @@ export interface IIncident extends Document {
     photoUrl?: string;
     status: "pending" | "verified" | "rejected";
     reportedAt: Date;
+    location?: {
+        type: "Point";
+        coordinates: [number, number];
+    };
 }
 
 const IncidentSchema = new Schema<IIncident>({
@@ -66,6 +70,21 @@ const IncidentSchema = new Schema<IIncident>({
         type: Date,
         default: Date.now,
     },
+    location: {
+        type: {
+            type: String,
+            enum: ["Point"],
+            required: true,
+        },
+        coordinates: {
+            type: [Number],
+            required: true,
+        },
+    },
 });
+
+// Index for geospatial queries
+IncidentSchema.index({ location: "2dsphere" });
+IncidentSchema.index({ userId: 1, reportedAt: -1 });
 
 export const IncidentModel = mongoose.model<IIncident>("Incident", IncidentSchema);

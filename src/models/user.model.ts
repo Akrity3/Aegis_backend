@@ -8,8 +8,12 @@ export interface IUser extends Omit<UserType, "password">, Document {
     _id: mongoose.Types.ObjectId;
     password?: string;
     createdAt: Date;
+    isEmailVerified?: boolean;
+    verifiedAt?: Date;
+    verificationToken?: string;
     getSignedJwtToken(): string;
     matchPassword(enteredPassword: string): Promise<boolean>;
+    generateVerificationToken(): string;
 }
 
 const UserMongoSchema = new Schema<IUser>(
@@ -70,6 +74,16 @@ const UserMongoSchema = new Schema<IUser>(
             enum: ["active", "inactive"],
             default: "active",
         },
+        isEmailVerified: {
+            type: Boolean,
+            default: false,
+        },
+        verifiedAt: {
+            type: Date,
+        },
+        verificationToken: {
+            type: String,
+        },
         createdAt: {
             type: Date,
             default: Date.now,
@@ -103,6 +117,12 @@ UserMongoSchema.methods.matchPassword = async function (
     enteredPassword: string
 ) {
     return await bcrypt.compare(enteredPassword, this.password || "");
+};
+
+UserMongoSchema.methods.generateVerificationToken = function (this: IUser) {
+    const verificationToken = require('crypto').randomBytes(32).toString('hex');
+    this.verificationToken = verificationToken;
+    return verificationToken;
 };
 
 export const UserModel = mongoose.model<IUser>("User", UserMongoSchema);
