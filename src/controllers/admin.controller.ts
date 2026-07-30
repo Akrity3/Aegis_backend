@@ -1,6 +1,6 @@
 import { Request, Response } from "express";
 import { z } from "zod";
-import { AdminCreateUserDTO, AdminUpdateUserDTO } from "../dtos/admin.dto";
+import { AdminCreateUserDTO, AdminUpdateUserDTO, AdminUpdateIncidentDTO } from "../dtos/admin.dto";
 import { AdminService } from "../services/admin.service";
 import { ApiResponseHelper } from "../utils/apihelper.util";
 
@@ -128,6 +128,207 @@ export class AdminController {
         try {
             const stats = await adminService.getStats();
             return ApiResponseHelper.success(res, stats, "Statistics fetched successfully");
+        } catch (error: any) {
+            return ApiResponseHelper.error(
+                res,
+                error.message || "Internal Server Error",
+                error.status || error.statusCode || 500
+            );
+        }
+    }
+
+    // GET /api/v1/admin/dashboard
+    async getDashboard(req: Request, res: Response) {
+        try {
+            const stats = await adminService.getDashboardStats();
+            return ApiResponseHelper.success(res, stats, "Dashboard data fetched successfully");
+        } catch (error: any) {
+            return ApiResponseHelper.error(
+                res,
+                error.message || "Internal Server Error",
+                error.status || error.statusCode || 500
+            );
+        }
+    }
+
+    // GET /api/v1/admin/incidents
+    async getIncidents(req: Request, res: Response) {
+        try {
+            const page = Math.max(1, parseInt(String(req.query.page ?? 1), 10) || 1);
+            const limit = Math.min(100, Math.max(1, parseInt(String(req.query.limit ?? 10), 10) || 10));
+            
+            const filters: any = {};
+            if (req.query.status) filters.status = req.query.status;
+            if (req.query.category) filters.category = req.query.category;
+            if (req.query.search) filters.search = req.query.search;
+            if (req.query.startDate && req.query.endDate) {
+                filters.startDate = req.query.startDate;
+                filters.endDate = req.query.endDate;
+            }
+
+            const result = await adminService.getIncidents(page, limit, filters);
+
+            return ApiResponseHelper.success(
+                res,
+                result.data,
+                "Incidents fetched successfully",
+                200,
+                result.meta
+            );
+        } catch (error: any) {
+            return ApiResponseHelper.error(
+                res,
+                error.message || "Internal Server Error",
+                error.status || error.statusCode || 500
+            );
+        }
+    }
+
+    // GET /api/v1/admin/incidents/:id
+    async getIncidentById(req: Request, res: Response) {
+        try {
+            const incident = await adminService.getIncidentById(String(req.params.id));
+            return ApiResponseHelper.success(res, incident, "Incident fetched successfully");
+        } catch (error: any) {
+            return ApiResponseHelper.error(
+                res,
+                error.message || "Internal Server Error",
+                error.status || error.statusCode || 500
+            );
+        }
+    }
+
+    // PATCH /api/v1/admin/incidents/:id
+    async updateIncident(req: Request, res: Response) {
+        try {
+            const parsed = AdminUpdateIncidentDTO.safeParse(req.body);
+            if (!parsed.success) {
+                const message = parsed.error.issues.map((e: z.ZodIssue) => e.message).join(', ');
+                return ApiResponseHelper.error(res, message, 400);
+            }
+
+            const incident = await adminService.updateIncident(String(req.params.id), parsed.data);
+            return ApiResponseHelper.success(res, incident, "Incident updated successfully");
+        } catch (error: any) {
+            return ApiResponseHelper.error(
+                res,
+                error.message || "Internal Server Error",
+                error.status || error.statusCode || 500
+            );
+        }
+    }
+
+    // DELETE /api/v1/admin/incidents/:id
+    async deleteIncident(req: Request, res: Response) {
+        try {
+            await adminService.deleteIncident(String(req.params.id));
+            return ApiResponseHelper.success(res, null, "Incident deleted successfully");
+        } catch (error: any) {
+            return ApiResponseHelper.error(
+                res,
+                error.message || "Internal Server Error",
+                error.status || error.statusCode || 500
+            );
+        }
+    }
+
+    // GET /api/v1/admin/alerts
+    async getAlerts(req: Request, res: Response) {
+        try {
+            const page = Math.max(1, parseInt(String(req.query.page ?? 1), 10) || 1);
+            const limit = Math.min(100, Math.max(1, parseInt(String(req.query.limit ?? 10), 10) || 10));
+            
+            const filters: any = {};
+            if (req.query.status) filters.status = req.query.status;
+            if (req.query.search) filters.search = req.query.search;
+            if (req.query.startDate && req.query.endDate) {
+                filters.startDate = req.query.startDate;
+                filters.endDate = req.query.endDate;
+            }
+
+            const result = await adminService.getAlerts(page, limit, filters);
+
+            return ApiResponseHelper.success(
+                res,
+                result.data,
+                "Alerts fetched successfully",
+                200,
+                result.meta
+            );
+        } catch (error: any) {
+            return ApiResponseHelper.error(
+                res,
+                error.message || "Internal Server Error",
+                error.status || error.statusCode || 500
+            );
+        }
+    }
+
+    // GET /api/v1/admin/alerts/:id
+    async getAlertById(req: Request, res: Response) {
+        try {
+            const alert = await adminService.getAlertById(String(req.params.id));
+            return ApiResponseHelper.success(res, alert, "Alert fetched successfully");
+        } catch (error: any) {
+            return ApiResponseHelper.error(
+                res,
+                error.message || "Internal Server Error",
+                error.status || error.statusCode || 500
+            );
+        }
+    }
+
+    // PATCH /api/v1/admin/alerts/:id/resolve
+    async resolveAlert(req: Request, res: Response) {
+        try {
+            const alert = await adminService.resolveAlert(String(req.params.id));
+            return ApiResponseHelper.success(res, alert, "Alert resolved successfully");
+        } catch (error: any) {
+            return ApiResponseHelper.error(
+                res,
+                error.message || "Internal Server Error",
+                error.status || error.statusCode || 500
+            );
+        }
+    }
+
+    // GET /api/v1/admin/activities
+    async getActivities(req: Request, res: Response) {
+        try {
+            const page = Math.max(1, parseInt(String(req.query.page ?? 1), 10) || 1);
+            const limit = Math.min(100, Math.max(1, parseInt(String(req.query.limit ?? 10), 10) || 10));
+            
+            const filters: any = {};
+            if (req.query.type) filters.type = req.query.type;
+            if (req.query.userId) filters.userId = req.query.userId;
+            if (req.query.startDate && req.query.endDate) {
+                filters.startDate = req.query.startDate;
+                filters.endDate = req.query.endDate;
+            }
+
+            const result = await adminService.getActivities(page, limit, filters);
+
+            return ApiResponseHelper.success(
+                res,
+                result.data,
+                "Activities fetched successfully",
+                200,
+                result.meta
+            );
+        } catch (error: any) {
+            return ApiResponseHelper.error(
+                res,
+                error.message || "Internal Server Error",
+                error.status || error.statusCode || 500
+            );
+        }
+    }
+
+    // GET /api/v1/admin/analytics
+    async getAnalytics(req: Request, res: Response) {
+        try {
+            const analytics = await adminService.getAnalytics();
+            return ApiResponseHelper.success(res, analytics, "Analytics data fetched successfully");
         } catch (error: any) {
             return ApiResponseHelper.error(
                 res,

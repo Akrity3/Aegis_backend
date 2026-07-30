@@ -1,79 +1,112 @@
 import { Request, Response } from "express";
 import { TriggerAlertDTO, ResolveAlertDTO } from "../dtos/alert.dto";
 import { AlertService } from "../services/alert.service";
+import { ActivityService } from "../services/activity.service";
+import { PushNotificationService } from "../services/pushNotification.service";
+import { SafetyCircleService } from "../services/safetyCircle.service";
+import { ApiResponseHelper } from "../utils/apihelper.util";
 
 const alertService = new AlertService();
+const activityService = new ActivityService();
+const pushNotificationService = new PushNotificationService();
+const safetyCircleService = new SafetyCircleService();
 
 export class AlertController {
     async getMyAlerts(req: Request, res: Response) {
         try {
             if (!req.user?._id) {
-                return res.status(401).json({ message: "Not authorized" });
+                return ApiResponseHelper.error(res, "Not authorized", 401);
             }
 
-            const alerts = await alertService.getMyAlerts(String(req.user._id));
+            const page = Math.max(1, parseInt(String(req.query.page ?? 1), 10) || 1);
+            const limit = Math.min(100, Math.max(1, parseInt(String(req.query.limit ?? 10), 10) || 10));
 
-            return res.status(200).json({
-                success: true,
-                message: "Alerts fetched successfully.",
-                data: alerts,
-            });
+            const result = await alertService.getMyAlerts(String(req.user._id), page, limit);
+
+            return ApiResponseHelper.success(
+                res,
+                result.data,
+                "Alerts fetched successfully",
+                200,
+                result.meta
+            );
         } catch (error: any) {
-            return res.status(error.status || error.statusCode || 500).json({
-                message: error.message || "Internal Server Error",
-            });
+            return ApiResponseHelper.error(res, error.message || "Internal Server Error", error.status || error.statusCode || 500);
         }
     }
 
     async triggerAlert(req: Request, res: Response) {
         try {
             if (!req.user?._id) {
-                return res.status(401).json({ message: "Not authorized" });
+                return ApiResponseHelper.error(res, "Not authorized", 401);
             }
 
             const parsedData = TriggerAlertDTO.safeParse(req.body);
             if (!parsedData.success) {
                 const message = parsedData.error.issues.map((e: any) => e.message).join(", ");
-                return res.status(400).json({ message });
+                return ApiResponseHelper.error(res, message, 400);
             }
 
             const alert = await alertService.triggerAlert(String(req.user._id), parsedData.data);
 
-            return res.status(201).json({
-                success: true,
-                message: "SOS triggered successfully.",
-                data: alert,
-            });
+            // Log alert triggered activity
+            await activityService.createActivity(
+                String(req.user._id),
+                "alert_triggered",
+                "SOS triggered successfully",
+                { alertId: alert._id, latitude: alert.latitude, longitude: alert.longitude },
+                req.ip,
+                req.headers["user-agent"]
+            );
+
+            // Send push notifications to safety circle members
+            const safetyCircle = await safetyCircleService.getSafetyCircle(String(req.user._id));
+            const safetyCircleUserIds = safetyCircle
+                .filter((member) => member.contactId && member.status === "active")
+                .map((member) => member.contactId.toString());
+
+            if (safetyCircleUserIds.length > 0) {
+                await pushNotificationService.sendSOSAlert(
+                    String(req.user._id),
+                    safetyCircleUserIds,
+                    { latitude: alert.latitude, longitude: alert.longitude }
+                );
+            }
+
+            return ApiResponseHelper.success(res, alert, "SOS triggered successfully", 201);
         } catch (error: any) {
-            return res.status(error.status || error.statusCode || 500).json({
-                message: error.message || "Internal Server Error",
-            });
+            return ApiResponseHelper.error(res, error.message || "Internal Server Error", error.status || error.statusCode || 500);
         }
     }
 
     async resolveAlert(req: Request, res: Response) {
         try {
             if (!req.user?._id) {
-                return res.status(401).json({ message: "Not authorized" });
+                return ApiResponseHelper.error(res, "Not authorized", 401);
             }
 
             const alertId = req.params.id as string;
             
             // Just structural validation for id if necessary, but params comes from URL
             if (!alertId) {
-                return res.status(400).json({ message: "Alert ID is required" });
+                return ApiResponseHelper.error(res, "Alert ID is required", 400);
             }
 
             await alertService.resolveAlert(String(req.user._id), alertId);
 
-            return res.status(200).json({
-                success: true,
-                message: "SOS resolved successfully.",
-            });
+            // Log alert resolved activity
+            await activityService.createActivity(
+                String(req.user._id),
+                "alert_resolved",
+                "SOS resolved successfully",
+                { alertId },
+                req.ip,
+                req.headers["user-agent"]
+            );
+
+            return ApiResponseHelper.success(res, null, "SOS resolved successfully");
         } catch (error: any) {
-            return res.status(error.status || error.statusCode || 500).json({
-                message: error.message || "Internal Server Error",
-            });
+            return ApiResponseHelper.error(res, error.message || "Internal Server Error", error.status || error.statusCode || 500);
         }
     }
 }

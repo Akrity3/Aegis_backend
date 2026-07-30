@@ -175,4 +175,109 @@ export class UserController {
             });
         }
     }
+
+    async refreshToken(req: Request, res: Response) {
+        try {
+            const token = req.cookies.token || req.cookies.auth_token;
+            if (!token) {
+                return res.status(401).json({ message: "No token provided" });
+            }
+
+            const { user, newToken } = await userService.refreshToken(token);
+
+            const options = {
+                expires: new Date(
+                    Date.now() + JWT_COOKIE_EXPIRE * 24 * 60 * 60 * 1000
+                ),
+                httpOnly: true,
+                sameSite: "strict" as const,
+                secure: NODE_ENV === "production",
+            };
+
+            const userResponse = user.toObject();
+            delete userResponse.password;
+
+            return res
+                .status(200)
+                .cookie("token", newToken, options)
+                .cookie("auth_token", newToken, options)
+                .json({
+                    success: true,
+                    token: newToken,
+                    data: userResponse,
+                });
+        } catch (error: any) {
+            return res.status(error.status || error.statusCode || 500).json({
+                message: error.message || "Internal Server Error",
+            });
+        }
+    }
+
+    async logout(req: Request, res: Response) {
+        try {
+            const options = {
+                expires: new Date(0),
+                httpOnly: true,
+                sameSite: "strict" as const,
+                secure: NODE_ENV === "production",
+            };
+
+            return res
+                .status(200)
+                .clearCookie("token", options)
+                .clearCookie("auth_token", options)
+                .json({
+                    success: true,
+                    message: "Logged out successfully",
+                });
+        } catch (error: any) {
+            return res.status(error.status || error.statusCode || 500).json({
+                message: error.message || "Internal Server Error",
+            });
+        }
+    }
+
+    async sendVerificationEmail(req: Request, res: Response) {
+        try {
+            const { email } = req.body;
+            if (!email) {
+                return res.status(400).json({ message: "Email is required" });
+            }
+
+            await userService.sendVerificationEmail(email);
+
+            return res.status(200).json({
+                success: true,
+                message: "Verification email sent successfully",
+            });
+        } catch (error: any) {
+            return res.status(error.status || error.statusCode || 500).json({
+                message: error.message || "Internal Server Error",
+            });
+        }
+    }
+
+    async verifyEmail(req: Request, res: Response) {
+        try {
+            const { token } = req.body;
+            if (!token) {
+                return res.status(400).json({ message: "Verification token is required" });
+            }
+
+            const user = await userService.verifyEmail(token);
+
+            const userResponse = user.toObject();
+            delete userResponse.password;
+
+            return res.status(200).json({
+                success: true,
+                data: userResponse,
+                message: "Email verified successfully",
+            });
+        } catch (error: any) {
+            return res.status(error.status || error.statusCode || 500).json({
+                message: error.message || "Internal Server Error",
+            });
+        }
+    }
 }
