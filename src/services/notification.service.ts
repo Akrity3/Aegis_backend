@@ -17,11 +17,25 @@ export class NotificationService {
     /**
      * Get all notifications for a user
      */
-    async getUserNotifications(userId: string, limit: number = 50): Promise<INotification[]> {
-        const notifications = await NotificationModel.find({ userId })
+    async getUserNotifications(userId: string, page: number = 1, limit: number = 10): Promise<{ data: INotification[], meta: { page: number, limit: number, total: number, totalPages: number } }> {
+        const skip = (page - 1) * limit;
+        const total = await NotificationModel.countDocuments({ userId });
+        const totalPages = Math.ceil(total / limit);
+
+        const data = await NotificationModel.find({ userId })
             .sort({ createdAt: -1 })
+            .skip(skip)
             .limit(limit);
-        return notifications;
+
+        return {
+            data,
+            meta: {
+                page,
+                limit,
+                total,
+                totalPages
+            }
+        };
     }
 
     /**

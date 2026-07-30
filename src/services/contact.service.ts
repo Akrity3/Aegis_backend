@@ -20,8 +20,16 @@ export class ContactService {
         }
     }
 
-    async getContacts(userId: string) {
-        return await this.contactRepository.getContactsByUserId(userId);
+    async getContacts(userId: string, page: number = 1, limit: number = 10, sort: string = "name") {
+        return await this.contactRepository.getContactsByUserId(userId, page, limit, sort);
+    }
+
+    async getContactById(userId: string, contactId: string) {
+        const contact = await this.contactRepository.getContactById(contactId, userId);
+        if (!contact) {
+            throw new HttpException(404, "Contact not found");
+        }
+        return contact;
     }
 
     async updateContact(userId: string, contactId: string, data: UpdateContactDTOType) {

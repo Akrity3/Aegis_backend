@@ -11,10 +11,27 @@ export class AlertService {
         });
     }
 
-    async getMyAlerts(userId: string) {
-        return await AlertModel.find({
+    async getMyAlerts(userId: string, page: number = 1, limit: number = 10): Promise<{ data: any[], meta: { page: number, limit: number, total: number, totalPages: number } }> {
+        const skip = (page - 1) * limit;
+        const total = await AlertModel.countDocuments({ userId: new mongoose.Types.ObjectId(userId) });
+        const totalPages = Math.ceil(total / limit);
+
+        const data = await AlertModel.find({
             userId: new mongoose.Types.ObjectId(userId),
-        }).sort({ triggeredAt: -1 });
+        })
+            .sort({ triggeredAt: -1 })
+            .skip(skip)
+            .limit(limit);
+
+        return {
+            data,
+            meta: {
+                page,
+                limit,
+                total,
+                totalPages
+            }
+        };
     }
 
 
