@@ -79,6 +79,53 @@ export class AlertController {
         }
     }
 
+    async getActiveAlert(req: Request, res: Response) {
+        try {
+            if (!req.user?._id) {
+                return ApiResponseHelper.error(res, "Not authorized", 401);
+            }
+
+            const alert = await alertService.getActiveAlertForUser(String(req.user._id));
+            return ApiResponseHelper.success(res, alert, "Active alert fetched successfully");
+        } catch (error: any) {
+            return ApiResponseHelper.error(res, error.message || "Internal Server Error", error.status || error.statusCode || 500);
+        }
+    }
+
+    async getAllActiveAlerts(req: Request, res: Response) {
+        try {
+            const alerts = await alertService.getActiveAlerts();
+            return ApiResponseHelper.success(res, alerts, "Active emergency alerts fetched successfully");
+        } catch (error: any) {
+            return ApiResponseHelper.error(res, error.message || "Internal Server Error", error.status || error.statusCode || 500);
+        }
+    }
+
+    async updateLocation(req: Request, res: Response) {
+        try {
+            if (!req.user?._id) {
+                return ApiResponseHelper.error(res, "Not authorized", 401);
+            }
+
+            const { alertId, latitude, longitude, accuracy } = req.body;
+            if (!alertId || latitude === undefined || longitude === undefined) {
+                return ApiResponseHelper.error(res, "alertId, latitude, and longitude are required", 400);
+            }
+
+            const alert = await alertService.updateAlertLocation(
+                String(req.user._id),
+                String(alertId),
+                Number(latitude),
+                Number(longitude),
+                accuracy ? Number(accuracy) : undefined
+            );
+
+            return ApiResponseHelper.success(res, alert, "Location updated successfully");
+        } catch (error: any) {
+            return ApiResponseHelper.error(res, error.message || "Internal Server Error", error.status || error.statusCode || 500);
+        }
+    }
+
     async resolveAlert(req: Request, res: Response) {
         try {
             if (!req.user?._id) {
@@ -87,12 +134,11 @@ export class AlertController {
 
             const alertId = req.params.id as string;
             
-            // Just structural validation for id if necessary, but params comes from URL
             if (!alertId) {
                 return ApiResponseHelper.error(res, "Alert ID is required", 400);
             }
 
-            await alertService.resolveAlert(String(req.user._id), alertId);
+            const alert = await alertService.resolveAlert(String(req.user._id), alertId);
 
             // Log alert resolved activity
             await activityService.createActivity(
@@ -104,9 +150,10 @@ export class AlertController {
                 req.headers["user-agent"]
             );
 
-            return ApiResponseHelper.success(res, null, "SOS resolved successfully");
+            return ApiResponseHelper.success(res, alert, "SOS resolved successfully");
         } catch (error: any) {
             return ApiResponseHelper.error(res, error.message || "Internal Server Error", error.status || error.statusCode || 500);
         }
     }
 }
+
