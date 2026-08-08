@@ -20,6 +20,7 @@ import notificationRoutes from "./routes/notification.route";
 import activityRoutes from "./routes/activity.route";
 import safetyCircleRoutes from "./routes/safetyCircle.route";
 import deviceRoutes from "./routes/device.route";
+import aiRoutes from "./routes/ai.route";
 import { errorMiddleware } from "./middlewares/error.middleware";
 
 const app: Application = express();
@@ -127,7 +128,12 @@ const corsOptions = {
         callback: (err: Error | null, allow?: boolean) => void
     ) {
         const allowedOrigins = CORS_ORIGIN ? CORS_ORIGIN.split(",") : [];
-        if (!origin || allowedOrigins.indexOf(origin) !== -1) {
+        // Allow requests with no origin (like mobile apps or Postman)
+        if (!origin) {
+            callback(null, true);
+            return;
+        }
+        if (allowedOrigins.indexOf(origin) !== -1) {
             callback(null, true);
         } else {
             callback(new Error("Not allowed by CORS"));
@@ -183,6 +189,7 @@ app.use("/api/v1/notifications", notificationRoutes);
 app.use("/api/v1/activities", activityRoutes);
 app.use("/api/v1/safety-circle", safetyCircleRoutes);
 app.use("/api/v1/devices", deviceRoutes);
+app.use("/api/v1/ai", aiRoutes);
 
 // Swagger UI
 app.use("/api-docs", swaggerUi.serve, swaggerUi.setup(swaggerSpec));

@@ -17,6 +17,6 @@ export const REFRESH_TOKEN_EXPIRE_DAYS: number = 30;
 export const JWT_COOKIE_EXPIRE: number =
     Number(process.env.JWT_COOKIE_EXPIRE) || 30;
 export const CORS_ORIGIN: string =
-    process.env.CORS_ORIGIN || "http://localhost:3000,http://localhost:3001";
+    process.env.CORS_ORIGIN || "http://localhost:3000,http://localhost:3001,http://192.168.254.4:8089";
 export const DISABLE_RATE_LIMIT: boolean =
     process.env.DISABLE_RATE_LIMIT === "true";

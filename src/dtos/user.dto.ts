@@ -15,9 +15,9 @@ export const UpdateUserDTO = z.object({
     lastName: z.string().trim().min(1, "Last name cannot be empty").optional(),
     gender: z.string().trim().optional(),
     phoneNumber: z.string().trim().optional().refine(
-        (phone) => !phone || /^\d{10}$/.test(phone),
+        (phone) => !phone || /^(?:\+?977)?(9[045678]\d{8})$/.test(phone),
         {
-            message: "Phone number must contain 10 digits",
+            message: "Must be a valid 10-digit Nepali mobile number (starting with 98, 97, 96, 95, 94, or 90)",
         }
     ),
     password: z.string().min(6, "Password must be at least 6 characters").optional(),

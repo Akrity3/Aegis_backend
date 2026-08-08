@@ -9,6 +9,7 @@ export const ACTIVITY_TYPES = [
     "contact_added",
     "contact_updated",
     "contact_deleted",
+    "contact_request_responded",
     "alert_triggered",
     "alert_resolved",
     "incident_reported",
@@ -17,6 +18,7 @@ export const ACTIVITY_TYPES = [
     "device_registered",
     "device_removed",
 ] as const;
+
 
 export type ActivityType = (typeof ACTIVITY_TYPES)[number];
 

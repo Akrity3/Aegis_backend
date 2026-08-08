@@ -41,6 +41,22 @@ contactRouter.post("/", authorizedMiddleware, contactController.addContact.bind(
 
 /**
  * @openapi
+ * /api/v1/contacts/pending:
+ *   get:
+ *     summary: Get incoming pending contact requests
+ *     tags: [Contacts]
+ *     security:
+ *       - cookieAuth: []
+ *     responses:
+ *       200:
+ *         description: Pending requests retrieved successfully
+ *       401:
+ *         description: Unauthorized
+ */
+contactRouter.get("/pending", authorizedMiddleware, contactController.getPendingRequests.bind(contactController));
+
+/**
+ * @openapi
  * /api/v1/contacts:
  *   get:
  *     summary: Get user's contacts
@@ -54,6 +70,42 @@ contactRouter.post("/", authorizedMiddleware, contactController.addContact.bind(
  *         description: Unauthorized
  */
 contactRouter.get("/", authorizedMiddleware, contactController.getContacts.bind(contactController));
+
+/**
+ * @openapi
+ * /api/v1/contacts/{id}/status:
+ *   put:
+ *     summary: Respond to pending contact request (accept or reject)
+ *     tags: [Contacts]
+ *     security:
+ *       - cookieAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - status
+ *             properties:
+ *               status:
+ *                 type: string
+ *                 enum: [accepted, rejected]
+ *     responses:
+ *       200:
+ *         description: Contact request responded successfully
+ *       401:
+ *         description: Unauthorized
+ *       404:
+ *         description: Request not found
+ */
+contactRouter.put("/:id/status", authorizedMiddleware, contactController.respondToRequest.bind(contactController));
 
 /**
  * @openapi
@@ -119,3 +171,4 @@ contactRouter.put("/:id", authorizedMiddleware, contactController.updateContact.
 contactRouter.delete("/:id", authorizedMiddleware, contactController.deleteContact.bind(contactController));
 
 export default contactRouter;
+

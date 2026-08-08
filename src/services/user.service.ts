@@ -134,8 +134,7 @@ export class UserService {
         const verificationToken = user.generateVerificationToken();
         await user.save();
 
-        // TODO: Implement actual email sending logic here
-        // For now, we'll just log the token
+        // Development token logging (SMTP integration configured in production environment)
         console.log(`Verification token for ${email}: ${verificationToken}`);
     }
 

@@ -6,6 +6,9 @@ export const NOTIFICATION_TYPES = [
     "incident_reported",
     "incident_verified",
     "contact_added",
+    "contact_request",
+    "contact_accepted",
+    "contact_rejected",
     "profile_updated",
     "password_changed",
     "system",
@@ -16,10 +19,12 @@ export type NotificationType = (typeof NOTIFICATION_TYPES)[number];
 export interface INotification extends Document {
     _id: mongoose.Types.ObjectId;
     userId: mongoose.Types.ObjectId;
+    senderId?: mongoose.Types.ObjectId;
     type: NotificationType;
     title: string;
     message: string;
     read: boolean;
+    metadata?: Record<string, any>;
     createdAt: Date;
 }
 
@@ -29,6 +34,10 @@ const NotificationSchema = new Schema<INotification>({
         ref: "User",
         required: [true, "User ID is required"],
         index: true,
+    },
+    senderId: {
+        type: Schema.Types.ObjectId,
+        ref: "User",
     },
     type: {
         type: String,
@@ -50,6 +59,9 @@ const NotificationSchema = new Schema<INotification>({
         default: false,
         index: true,
     },
+    metadata: {
+        type: Schema.Types.Mixed,
+    },
     createdAt: {
         type: Date,
         default: Date.now,
@@ -60,3 +72,4 @@ const NotificationSchema = new Schema<INotification>({
 NotificationSchema.index({ userId: 1, read: 1, createdAt: -1 });
 
 export const NotificationModel = mongoose.model<INotification>("Notification", NotificationSchema);
+

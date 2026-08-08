@@ -63,8 +63,8 @@ export class IncidentService {
      * Fields included: category, coordinates, address, photoUrl, status, reportedAt.
      */
     async getPublicIncidents() {
-        // Future: change filter to { status: "verified" } once admin moderation is live.
-        const filter = {};
+        // Only return approved/verified incidents on public feeds and Safety Map.
+        const filter = { status: "verified" as const };
 
         return await IncidentModel.find(filter)
             .select("-userId")

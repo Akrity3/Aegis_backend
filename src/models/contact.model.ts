@@ -1,12 +1,18 @@
 import mongoose, { Schema, Document } from "mongoose";
 
+export type ContactStatus = "pending" | "accepted" | "rejected" | "removed" | "unregistered";
+
 export interface IContact extends Document {
     _id: mongoose.Types.ObjectId;
     userId: mongoose.Types.ObjectId;
+    targetUserId?: mongoose.Types.ObjectId;
     name: string;
     phoneNumber: string;
     relation: string;
     isPrimary: boolean;
+    status: ContactStatus;
+    avatarUrl?: string;
+    isEmergencyContact: boolean;
     createdAt: Date;
     updatedAt: Date;
 }
@@ -17,6 +23,13 @@ const ContactMongoSchema = new Schema<IContact>(
             type: Schema.Types.ObjectId,
             ref: "User",
             required: true,
+            index: true,
+        },
+        targetUserId: {
+            type: Schema.Types.ObjectId,
+            ref: "User",
+            required: false,
+            index: true,
         },
         name: {
             type: String,
@@ -37,6 +50,20 @@ const ContactMongoSchema = new Schema<IContact>(
             type: Boolean,
             default: false,
         },
+        status: {
+            type: String,
+            enum: ["pending", "accepted", "rejected", "removed", "unregistered"],
+            default: "unregistered",
+            index: true,
+        },
+        avatarUrl: {
+            type: String,
+            trim: true,
+        },
+        isEmergencyContact: {
+            type: Boolean,
+            default: true,
+        },
     },
     {
         timestamps: true,
@@ -47,3 +74,4 @@ const ContactMongoSchema = new Schema<IContact>(
 ContactMongoSchema.index({ userId: 1, phoneNumber: 1 }, { unique: true });
 
 export const ContactModel = mongoose.model<IContact>("Contact", ContactMongoSchema);
+
